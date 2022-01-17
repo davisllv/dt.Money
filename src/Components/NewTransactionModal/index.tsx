@@ -4,7 +4,7 @@ import closeImg from "../../assets/close.svg";
 import incomeImg from "../../assets/income.svg";
 import outcomeImg from "../../assets/outcome.svg";
 import { FormEvent, useState } from "react";
-import { api } from "../../services/api";
+import { useTransactions } from "../../hooks/useTransactions";
 
 interface isNewTransactionModalProps {
   isOpen: boolean;
@@ -15,22 +15,27 @@ export function NewTransactionModal({
   isOpen,
   onRequestClose,
 }: isNewTransactionModalProps) {
+  const { createTransaction } = useTransactions();
+
   const [type, setType] = useState("");
   const [title, setTitle] = useState("");
-  const [value, setValue] = useState(0);
+  const [amount, setAmount] = useState(0);
   const [category, setCategory] = useState("");
 
-  function handleCreateNewTransaction(event: FormEvent) {
+  async function handleCreateNewTransaction(event: FormEvent): Promise<void> {
     event.preventDefault();
 
-    const data = {
+    await createTransaction({
       title,
-      value,
-      type,
+      amount,
       category,
-    };
-
-    api.post("/transaction", data);
+      type,
+    });
+    setType("");
+    setTitle("");
+    setAmount(0);
+    setCategory("");
+    onRequestClose();
   }
 
   return (
@@ -59,13 +64,14 @@ export function NewTransactionModal({
         <input
           type="number"
           placeholder="Valor"
-          value={value}
-          onChange={(ev) => setValue(Number(ev.target.value))}
+          value={amount}
+          onChange={(ev) => setAmount(Number(ev.target.value))}
         />
 
         <TransactionTypeContainer>
           <RadioBox
             onClick={(ev) => {
+              ev.preventDefault();
               setType("deposit");
             }}
             isActive={type === "deposit"}
@@ -76,6 +82,7 @@ export function NewTransactionModal({
           </RadioBox>
           <RadioBox
             onClick={(ev) => {
+              ev.preventDefault();
               setType("withdraw");
             }}
             isActive={type === "withdraw"}
